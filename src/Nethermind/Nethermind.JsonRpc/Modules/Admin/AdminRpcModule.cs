@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 using System;
+//using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nethermind.Blockchain;
@@ -9,10 +10,12 @@ using Nethermind.Blockchain.FullPruning;
 using Nethermind.Config;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+//using Nethermind.JsonRpc.Modules.Subscribe;
 using Nethermind.Network;
 using Nethermind.Network.Config;
 using Nethermind.Specs.ChainSpecStyle;
 using Nethermind.Stats.Model;
+//using System.Text.Json;
 
 namespace Nethermind.JsonRpc.Modules.Admin;
 
@@ -27,6 +30,7 @@ public class AdminRpcModule : IAdminRpcModule
     private readonly string _dataDir;
     private readonly ManualPruningTrigger _pruningTrigger;
     private NodeInfo _nodeInfo = null!;
+    //private readonly ISubscriptionManager _peerEventsSubscriptionManager;
 
     public AdminRpcModule(
         IBlockTree blockTree,
@@ -46,6 +50,7 @@ public class AdminRpcModule : IAdminRpcModule
         _staticNodesManager = staticNodesManager ?? throw new ArgumentNullException(nameof(staticNodesManager));
         _pruningTrigger = pruningTrigger;
         _parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        //_peerEventsSubscriptionManager = peerEventsSubscriptionManager ?? throw new ArgumentNullException(nameof(peerEventsSubscriptionManager));
 
         BuildNodeInfo();
     }
@@ -115,6 +120,27 @@ public class AdminRpcModule : IAdminRpcModule
             : ResultWrapper<string>.Fail("Failed to remove peer.");
     }
 
+    //public ResultWrapper<string> admin_subscribe(string subscriptionName, string? args = null)
+    //{
+    //    try
+    //    {
+    //        ResultWrapper<string> successfulResult = ResultWrapper<string>.Success(_peerEventsSubscriptionManager.AddSubscription(Context.DuplexClient, subscriptionName, args)); 
+    //        return successfulResult;
+    //    }
+    //    catch (KeyNotFoundException)
+    //    {
+    //        return ResultWrapper<string>.Fail($"Wrong subscription type: {subscriptionName}.");
+    //    }
+    //    catch (ArgumentException e)
+    //    {
+    //        return ResultWrapper<string>.Fail($"Invalid params", ErrorCodes.InvalidParams, e.Message);
+    //    }
+    //    catch (JsonException)
+    //    {
+    //        return ResultWrapper<string>.Fail($"Invalid params", ErrorCodes.InvalidParams);
+    //    }
+    //}
+
     public ResultWrapper<PeerInfo[]> admin_peers(bool includeDetails = false)
         => ResultWrapper<PeerInfo[]>.Success(
             _peerPool.ActivePeers.Select(p => new PeerInfo(p.Value, includeDetails)).ToArray());
@@ -139,4 +165,6 @@ public class AdminRpcModule : IAdminRpcModule
     {
         return ResultWrapper<PruningStatus>.Success(_pruningTrigger.Trigger());
     }
+
+    //public JsonRpcContext Context { get; set; }
 }

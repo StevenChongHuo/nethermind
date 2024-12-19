@@ -25,7 +25,7 @@ namespace Nethermind.Evm.Tracing
         bool IsTracingRewards { get; }
 
         /// <summary>
-        /// Reports rewards for bock.
+        /// Reports rewards for block.
         /// </summary>
         /// <param name="author">Author/coinbase for reward.</param>
         /// <param name="rewardType">Type of reward.</param>

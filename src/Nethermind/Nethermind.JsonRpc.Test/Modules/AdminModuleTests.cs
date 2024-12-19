@@ -5,13 +5,19 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
+//using FluentAssertions.Equivalency;
+//using Google.Protobuf.WellKnownTypes;
 using Nethermind.Blockchain;
 using Nethermind.Blockchain.FullPruning;
 using Nethermind.Config;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Test.Builders;
+//using Nethermind.JsonRpc.Modules;
+//using Nethermind.JsonRpc;
 using Nethermind.JsonRpc.Modules.Admin;
+//using Nethermind.JsonRpc.Modules.Subscribe;
+using Nethermind.Logging;
 using Nethermind.Network;
 using Nethermind.Network.Config;
 using Nethermind.Serialization.Json;
@@ -32,6 +38,9 @@ public class AdminModuleTests
     private IBlockTree _blockTree = null!;
     private const string _enodeString = "enode://e1b7e0dc09aae610c9dec8a0bee62bab9946cc27ebdd2f9e3571ed6d444628f99e91e43f4a14d42d498217608bb3e1d1bc8ec2aa27d7f7e423413b851bae02bc@127.0.0.1:30303";
     private const string _exampleDataDir = "/example/dbdir";
+    //private PeerEventsSubscriptionManager _peerEventsSubscriptionManager = null!;
+    private ILogManager _logManager = null!;
+    private IJsonRpcDuplexClient _jsonRpcDuplexClient = null!;
 
     [SetUp]
     public void Setup()
@@ -42,6 +51,9 @@ public class AdminModuleTests
         ConcurrentDictionary<PublicKeyAsKey, Peer> dict = new();
         dict.TryAdd(TestItem.PublicKeyA, new Peer(new Node(TestItem.PublicKeyA, "127.0.0.1", 30303, true)));
         peerPool.ActivePeers.Returns(dict);
+        _logManager = Substitute.For<ILogManager>();
+        _serializer = new EthereumJsonSerializer();
+        _jsonRpcDuplexClient = Substitute.For<IJsonRpcDuplexClient>();
 
         IStaticNodesManager staticNodesManager = Substitute.For<IStaticNodesManager>();
         Enode enode = new(_enodeString);
@@ -49,6 +61,12 @@ public class AdminModuleTests
         {
             Parameters = new ChainParameters()
         };
+
+        PeerEventsSubscriptionFactory peerEventsSubscriptionFactory = new(
+            _logManager,
+            _serializer,
+            peerPool);
+        PeerEventsSubscriptionManager _peerEventsSubscriptionManager = new(peerEventsSubscriptionFactory, _logManager);
 
         _adminRpcModule = new AdminRpcModule(
             _blockTree,
@@ -59,8 +77,14 @@ public class AdminModuleTests
             _exampleDataDir,
             new ManualPruningTrigger(),
             chainSpec.Parameters);
+        //_adminRpcModule.Context = new JsonRpcContext(RpcEndpoint.Ws, _jsonRpcDuplexClient);
 
-        _serializer = new EthereumJsonSerializer();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _jsonRpcDuplexClient?.Dispose();
     }
 
     [Test]
@@ -108,4 +132,32 @@ public class AdminModuleTests
         _ = await RpcTest.TestSerializedRequest(_adminRpcModule, "admin_removePeer", _enodeString, true);
         _ = await RpcTest.TestSerializedRequest(_adminRpcModule, "admin_peers");
     }
+
+    [Test]
+    public void Admin_subscription_when_peer_added_publishes_notification()
+    {
+        IPeerPool peerPool = Substitute.For<IPeerPool>();
+        //IJsonRpcParam? param = null;
+        Node node = new(TestItem.PublicKeyA, "192.168.1.18", 8000, false);
+        Peer peer = new(node);
+        PeerEventsSubscription peerEventsSubscription = new(_jsonRpcDuplexClient, _logManager, peerPool);
+        //JsonRpcResult results =  peerAddedSubscription()
+        peerPool.PeerAdded += Raise.EventWith<PeerEventArgs>(new PeerEventArgs(peer));
+
+
+
+    }
+
+    //[Test]
+    //public void Test_admin_peerEvents()
+    //{
+    //    string subscriptionName = "add";
+    //    string? args = null;
+    //    ResultWrapper<string> results;
+    //    string enode = "enode://1234556789";
+    //    results = _adminRpcModule.admin_subscription(subscriptionName, args);
+    //    _adminRpcModule.admin_addPeer(enode, false);
+
+        
+    //}
 }

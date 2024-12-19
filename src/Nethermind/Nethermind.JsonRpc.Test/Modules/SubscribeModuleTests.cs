@@ -25,6 +25,7 @@ using Nethermind.JsonRpc.Modules.Eth;
 using Nethermind.JsonRpc.Modules.Subscribe;
 using Nethermind.JsonRpc.WebSockets;
 using Nethermind.Logging;
+using Nethermind.Network;
 using Nethermind.Serialization.Json;
 using Nethermind.Sockets;
 using Nethermind.Specs;
@@ -53,6 +54,7 @@ namespace Nethermind.JsonRpc.Test.Modules
         private IReceiptMonitor _receiptCanonicalityMonitor = null!;
         private ISyncConfig _syncConfig = null!;
         private ISyncProgressResolver _syncProgressResolver = null!;
+        private IPeerPool _peerPool = null!;
 
         [SetUp]
         public void Setup()
@@ -68,6 +70,7 @@ namespace Nethermind.JsonRpc.Test.Modules
             _receiptCanonicalityMonitor = new ReceiptCanonicalityMonitor(_receiptStorage, _logManager);
             _syncConfig = new SyncConfig();
             _syncProgressResolver = Substitute.For<ISyncProgressResolver>();
+            _peerPool = Substitute.For<IPeerPool>();
 
             IJsonSerializer jsonSerializer = new EthereumJsonSerializer();
 
@@ -80,7 +83,8 @@ namespace Nethermind.JsonRpc.Test.Modules
                 new EthSyncingInfo(_blockTree, _receiptStorage, _syncConfig,
                 new StaticSelector(SyncMode.All), _syncProgressResolver, _logManager),
                 _specProvider,
-                jsonSerializer);
+                jsonSerializer,
+                _peerPool);
 
             _subscriptionManager = new SubscriptionManager(
                 subscriptionFactory,

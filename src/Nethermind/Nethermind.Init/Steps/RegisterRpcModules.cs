@@ -136,6 +136,11 @@ public class RegisterRpcModules : IStep
         ManualPruningTrigger pruningTrigger = new();
         _api.PruningTrigger.Add(pruningTrigger);
         (IApiWithStores getFromApi, IApiWithBlockchain setInApi) = _api.ForInit;
+        //PeerEventsSubscriptionFactory peerEventsSubscriptionFactory = new(
+        //    _api.LogManager,
+        //    rpcModuleProvider.Serializer,
+        //    _api.PeerPool);
+        //PeerEventsSubscriptionManager peerEventsSubscriptionManager = new(peerEventsSubscriptionFactory, _api.LogManager);
         AdminRpcModule adminRpcModule = new(
             _api.BlockTree,
             networkConfig,
@@ -187,7 +192,8 @@ public class RegisterRpcModules : IStep
             _api.FilterStore,
             _api.EthSyncingInfo!,
             _api.SpecProvider,
-            rpcModuleProvider.Serializer);
+            rpcModuleProvider.Serializer,
+            _api.PeerPool);
 
         _api.SubscriptionFactory = subscriptionFactory;
 

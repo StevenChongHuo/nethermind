@@ -67,6 +67,7 @@ namespace Nethermind.JsonRpc.Modules
             Parity,
             Health,
             Rpc,
+            Admin,
         };
 
         public static IEnumerable<string> DefaultEngineModules { get; } = new List<string>()

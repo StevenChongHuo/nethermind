@@ -65,4 +65,6 @@ public interface IAdminRpcModule : IRpcModule
         ExampleResponse = "\"Starting\"",
         IsImplemented = true)]
     ResultWrapper<PruningStatus> admin_prune();
+
+    //ResultWrapper<string> admin_subscribe(string subscriptionName, string? args = null);
 }

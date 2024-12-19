@@ -11,5 +11,7 @@ namespace Nethermind.JsonRpc.Modules.Subscribe
 
         [JsonRpcMethod(Description = "Unsubscribes from a subscription.", IsImplemented = true, IsSharable = false, Availability = RpcEndpoint.All & ~RpcEndpoint.Http)]
         ResultWrapper<bool> eth_unsubscribe(string subscriptionId);
+
+        ResultWrapper<string> admin_subscribe(string subscriptionName, string? args = null);
     }
 }

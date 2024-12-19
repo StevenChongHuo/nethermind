@@ -4,20 +4,20 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Nethermind.Blockchain;
-using Nethermind.Blockchain.Filters;
+//using Nethermind.Blockchain;
+//using Nethermind.Blockchain.Filters;
 using Nethermind.Core.Extensions;
-using Nethermind.Core.Specs;
-using Nethermind.Facade.Eth;
-using Nethermind.JsonRpc.Modules.Eth;
+//using Nethermind.Core.Specs;
+//using Nethermind.Facade.Eth;
+//using Nethermind.JsonRpc.Modules.Eth;
 using Nethermind.Logging;
 using Nethermind.Serialization.Json;
-using Nethermind.TxPool;
+//using Nethermind.TxPool;
 using System.Text.Json;
-using Nethermind.JsonRpc.Modules.Admin;
 using Nethermind.Network;
+using Nethermind.JsonRpc.Modules.Subscribe;
 
-namespace Nethermind.JsonRpc.Modules.Subscribe;
+namespace Nethermind.JsonRpc.Modules.Admin;
 
 /// <summary>
 /// Creates different types of subscriptions.
@@ -28,52 +28,43 @@ namespace Nethermind.JsonRpc.Modules.Subscribe;
 /// When SubscriptionFactory is constructed, the basic subscription types are automatically loaded.
 /// Plugins may import additional subscription types by calling <see cref="RegisterSubscriptionType"/>.
 /// </remarks>
-public class SubscriptionFactory : ISubscriptionFactory
+public class PeerEventsSubscriptionFactory : ISubscriptionFactory
 {
     private readonly IJsonSerializer _jsonSerializer;
     private readonly ConcurrentDictionary<string, CustomSubscriptionType> _subscriptionConstructors;
     private readonly IPeerPool _peerPool;
 
-    public SubscriptionFactory(ILogManager? logManager,
-        IBlockTree? blockTree,
-        ITxPool? txPool,
-        IReceiptMonitor receiptCanonicalityMonitor,
-        IFilterStore? filterStore,
-        IEthSyncingInfo ethSyncingInfo,
-        ISpecProvider specProvider,
+    public PeerEventsSubscriptionFactory(ILogManager? logManager,
+        //IBlockTree? blockTree,
+        //ITxPool? txPool,
+        //IReceiptMonitor receiptCanonicalityMonitor,
+        //IFilterStore? filterStore,
+        //IEthSyncingInfo ethSyncingInfo,
+        //ISpecProvider specProvider,
         IJsonSerializer jsonSerializer,
         IPeerPool peerPool)
     {
         _jsonSerializer = jsonSerializer;
         logManager = logManager ?? throw new ArgumentNullException(nameof(logManager));
-        blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
-        txPool = txPool ?? throw new ArgumentNullException(nameof(txPool));
-        receiptCanonicalityMonitor = receiptCanonicalityMonitor ?? throw new ArgumentNullException(nameof(receiptCanonicalityMonitor));
-        filterStore = filterStore ?? throw new ArgumentNullException(nameof(filterStore));
-        ethSyncingInfo = ethSyncingInfo ?? throw new ArgumentNullException(nameof(ethSyncingInfo));
-        specProvider = specProvider ?? throw new ArgumentNullException(nameof(specProvider));
+        //blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
+        //txPool = txPool ?? throw new ArgumentNullException(nameof(txPool));
+        //receiptCanonicalityMonitor = receiptCanonicalityMonitor ?? throw new ArgumentNullException(nameof(receiptCanonicalityMonitor));
+        //filterStore = filterStore ?? throw new ArgumentNullException(nameof(filterStore));
+        //ethSyncingInfo = ethSyncingInfo ?? throw new ArgumentNullException(nameof(ethSyncingInfo));
+        //specProvider = specProvider ?? throw new ArgumentNullException(nameof(specProvider));
         _peerPool = peerPool ?? throw new ArgumentNullException(nameof(peerPool));
 
         _subscriptionConstructors = new ConcurrentDictionary<string, CustomSubscriptionType>
         {
 
             //Register the standard subscription types in the dictionary.
-            [SubscriptionType.NewHeads] = CreateSubscriptionType<TransactionsOption?>((jsonRpcDuplexClient, args) =>
-                new NewHeadSubscription(jsonRpcDuplexClient, blockTree, logManager, specProvider, args)),
+            //[PeerEventsSubscriptionType.Add] = CreateSubscriptionType<TransactionsOption?>((jsonRpcDuplexClient, args) =>
+            //    new PeerAddedSubscription(jsonRpcDuplexClient, logManager, args, _peerPool)),
 
-            [SubscriptionType.Logs] = CreateSubscriptionType<Filter?>((jsonRpcDuplexClient, filter) =>
-                new LogsSubscription(jsonRpcDuplexClient, receiptCanonicalityMonitor, filterStore, blockTree, logManager, filter)),
+            //[PeerEventsSubscriptionType.Drop] = CreateSubscriptionType<TransactionsOption?>((jsonRpcDuplexClient, args) =>
+            //    new PeerDroppedSubscription(jsonRpcDuplexClient, logManager, args, _peerPool)),
 
-            [SubscriptionType.NewPendingTransactions] = CreateSubscriptionType<TransactionsOption?>((jsonRpcDuplexClient, args) =>
-                new NewPendingTransactionsSubscription(jsonRpcDuplexClient, txPool, specProvider, logManager, args)),
-
-            [SubscriptionType.DroppedPendingTransactions] = CreateSubscriptionType(jsonRpcDuplexClient =>
-                new DroppedPendingTransactionsSubscription(jsonRpcDuplexClient, txPool, logManager)),
-
-            [SubscriptionType.Syncing] = CreateSubscriptionType(jsonRpcDuplexClient =>
-                new SyncingSubscription(jsonRpcDuplexClient, blockTree, ethSyncingInfo, logManager)),
-
-            [SubscriptionType.PeerEvents] = CreateSubscriptionType((jsonRpcDuplexClient) =>
+            [PeerEventsSubscriptionType.PeerEvents] = CreateSubscriptionType(jsonRpcDuplexClient =>
                 new PeerEventsSubscription(jsonRpcDuplexClient, logManager, _peerPool)),
         };
     }

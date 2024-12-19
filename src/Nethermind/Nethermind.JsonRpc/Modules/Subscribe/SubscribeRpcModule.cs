@@ -45,6 +45,27 @@ namespace Nethermind.JsonRpc.Modules.Subscribe
                 : ResultWrapper<bool>.Fail($"Failed to unsubscribe: {subscriptionId}.");
         }
 
+        public ResultWrapper<string> admin_subscribe(string subscriptionName, string? args = null)
+        {
+            try
+            {
+                ResultWrapper<string> successfulResult = ResultWrapper<string>.Success(_subscriptionManager.AddSubscription(Context.DuplexClient, subscriptionName, args));
+                return successfulResult;
+            }
+            catch (KeyNotFoundException)
+            {
+                return ResultWrapper<string>.Fail($"Wrong subscription type: {subscriptionName}.");
+            }
+            catch (ArgumentException e)
+            {
+                return ResultWrapper<string>.Fail($"Invalid params", ErrorCodes.InvalidParams, e.Message);
+            }
+            catch (JsonException)
+            {
+                return ResultWrapper<string>.Fail($"Invalid params", ErrorCodes.InvalidParams);
+            }
+        }
+
         public JsonRpcContext Context { get; set; }
 
 
