@@ -10,12 +10,10 @@ using Nethermind.Blockchain.FullPruning;
 using Nethermind.Config;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
-//using Nethermind.JsonRpc.Modules.Subscribe;
 using Nethermind.Network;
 using Nethermind.Network.Config;
 using Nethermind.Specs.ChainSpecStyle;
 using Nethermind.Stats.Model;
-//using System.Text.Json;
 
 namespace Nethermind.JsonRpc.Modules.Admin;
 
@@ -30,7 +28,6 @@ public class AdminRpcModule : IAdminRpcModule
     private readonly string _dataDir;
     private readonly ManualPruningTrigger _pruningTrigger;
     private NodeInfo _nodeInfo = null!;
-    //private readonly ISubscriptionManager _peerEventsSubscriptionManager;
 
     public AdminRpcModule(
         IBlockTree blockTree,

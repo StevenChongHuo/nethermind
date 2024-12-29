@@ -133,31 +133,4 @@ public class AdminModuleTests
         _ = await RpcTest.TestSerializedRequest(_adminRpcModule, "admin_peers");
     }
 
-    [Test]
-    public void Admin_subscription_when_peer_added_publishes_notification()
-    {
-        IPeerPool peerPool = Substitute.For<IPeerPool>();
-        //IJsonRpcParam? param = null;
-        Node node = new(TestItem.PublicKeyA, "192.168.1.18", 8000, false);
-        Peer peer = new(node);
-        PeerEventsSubscription peerEventsSubscription = new(_jsonRpcDuplexClient, _logManager, peerPool);
-        //JsonRpcResult results =  peerAddedSubscription()
-        peerPool.PeerAdded += Raise.EventWith<PeerEventArgs>(new PeerEventArgs(peer));
-
-
-
-    }
-
-    //[Test]
-    //public void Test_admin_peerEvents()
-    //{
-    //    string subscriptionName = "add";
-    //    string? args = null;
-    //    ResultWrapper<string> results;
-    //    string enode = "enode://1234556789";
-    //    results = _adminRpcModule.admin_subscription(subscriptionName, args);
-    //    _adminRpcModule.admin_addPeer(enode, false);
-
-        
-    //}
 }

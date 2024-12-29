@@ -21,6 +21,8 @@ using Nethermind.Core.Test.Builders;
 using Nethermind.Facade.Eth;
 using Nethermind.Int256;
 using Nethermind.JsonRpc.Modules;
+using Nethermind.JsonRpc.Modules.Admin;
+using Nethermind.Stats.Model;
 using Nethermind.JsonRpc.Modules.Eth;
 using Nethermind.JsonRpc.Modules.Subscribe;
 using Nethermind.JsonRpc.WebSockets;
@@ -223,6 +225,46 @@ namespace Nethermind.JsonRpc.Test.Modules
             return jsonRpcResult;
         }
 
+        private JsonRpcResult GetPeerEventsAddResult(PeerEventArgs peerEventArgs, out string subscriptionId, bool shouldReceiveResult = true)
+        {
+            PeerEventsSubscription peerEventsSubscription = new(_jsonRpcDuplexClient, _logManager, _peerPool);
+
+            JsonRpcResult jsonRpcResult = new();
+
+            ManualResetEvent manualResetEvent = new(false);
+            peerEventsSubscription.JsonRpcDuplexClient.SendJsonRpcResult(Arg.Do<JsonRpcResult>(j =>
+            {
+                jsonRpcResult = j;
+                manualResetEvent.Set();
+            }));
+
+            _peerPool.PeerAdded += Raise.EventWith(new object(), peerEventArgs);
+            manualResetEvent.WaitOne(TimeSpan.FromMilliseconds(1000)).Should().Be(shouldReceiveResult);
+
+            subscriptionId = peerEventsSubscription.Id;
+            return jsonRpcResult;
+        }
+
+        private JsonRpcResult GetPeerEventsRemovedResult(PeerEventArgs peerEventArgs, out string subscriptionId, bool shouldReceiveResult = true)
+        {
+            PeerEventsSubscription peerEventsSubscription = new(_jsonRpcDuplexClient, _logManager, _peerPool);
+
+            JsonRpcResult jsonRpcResult = new();
+
+            ManualResetEvent manualResetEvent = new(false);
+            peerEventsSubscription.JsonRpcDuplexClient.SendJsonRpcResult(Arg.Do<JsonRpcResult>(j =>
+            {
+                jsonRpcResult = j;
+                manualResetEvent.Set();
+            }));
+
+            _peerPool.PeerRemoved += Raise.EventWith(new object(), peerEventArgs);
+            manualResetEvent.WaitOne(TimeSpan.FromMilliseconds(1000)).Should().Be(shouldReceiveResult);
+
+            subscriptionId = peerEventsSubscription.Id;
+            return jsonRpcResult;
+        }
+
         [Test]
         public async Task Wrong_subscription_name()
         {
@@ -235,6 +277,14 @@ namespace Nethermind.JsonRpc.Test.Modules
         public async Task No_subscription_name()
         {
             string serialized = await RpcTest.TestSerializedRequest(_subscribeRpcModule, "eth_subscribe");
+            var expectedResult = "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32602,\"message\":\"Invalid params\",\"data\":\"Incorrect parameters count, expected: 2, actual: 0\"},\"id\":67}";
+            expectedResult.Should().Be(serialized);
+        }
+
+        [Test]
+        public async Task No_subscription_name_admin()
+        {
+            string serialized = await RpcTest.TestSerializedRequest(_subscribeRpcModule, "admin_subscribe");
             var expectedResult = "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32602,\"message\":\"Invalid params\",\"data\":\"Incorrect parameters count, expected: 2, actual: 0\"},\"id\":67}";
             expectedResult.Should().Be(serialized);
         }
@@ -1174,6 +1224,44 @@ namespace Nethermind.JsonRpc.Test.Modules
             jsonRpcResults.Count.Should().Be(1);
             string serialized = _jsonSerializer.Serialize(jsonRpcResults[0].Response);
             var expectedResult = string.Concat("{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"", logsSubscription.Id, "\",\"result\":{\"address\":\"0xb7705ae4c6f81b66cdb323c65f4e8133690fc099\",\"blockNumber\":\"0xd903\",\"data\":\"0x010203\",\"logIndex\":\"0x0\",\"removed\":true,\"topics\":[\"0x03783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760\"],\"transactionIndex\":\"0x0\",\"transactionLogIndex\":\"0x0\"}}}");
+            expectedResult.Should().Be(serialized);
+        }
+
+        [Test]
+        public async Task PeerEventsSubscription_creating_result()
+        {
+            string serialized = await RpcTest.TestSerializedRequest(_subscribeRpcModule, "admin_subscribe", "peerEvents");
+            var expectedResult = string.Concat("{\"jsonrpc\":\"2.0\",\"result\":\"", serialized.Substring(serialized.Length - 44, 34), "\",\"id\":67}");
+            expectedResult.Should().Be(serialized);
+        }
+
+        [Test]
+        public void Admin_subscription_on_PeerAdded_event()
+        {
+            //Block block = Build.A.Block.WithDifficulty(1991).WithExtraData(new byte[] { 3, 5, 8 }).TestObject;
+            //BlockReplacementEventArgs blockReplacementEventArgs = new(block);
+            Node node = new(TestItem.PublicKeyA, "192.168.1.18", 8000, false);
+
+            JsonRpcResult jsonRpcResult = GetPeerEventsAddResult(new PeerEventArgs(new Peer(node)), out string subscriptionId);
+
+            jsonRpcResult.Response.Should().NotBeNull();
+            string serialized = _jsonSerializer.Serialize(jsonRpcResult.Response);
+            var expectedResult = string.Concat("{\"jsonrpc\":\"2.0\",\"method\":\"admin_subscription\",\"params\":{\"subscription\":\"", subscriptionId, "\",\"result\":{\"type\":\"Add\",\"peer\":\"", TestItem.PublicKeyA.Hash.ToString(false), "\",\"local\":\"192.168.1.18\",\"remote\":\"192.168.1.18:8000\"}}}");
+            expectedResult.Should().Be(serialized);
+        }
+
+        [Test]
+        public void Admin_subscription_on_PeerRemoved_event()
+        {
+            //Block block = Build.A.Block.WithDifficulty(1991).WithExtraData(new byte[] { 3, 5, 8 }).TestObject;
+            //BlockReplacementEventArgs blockReplacementEventArgs = new(block);
+            Node node = new(TestItem.PublicKeyA, "192.168.1.18", 8000, false);
+
+            JsonRpcResult jsonRpcResult = GetPeerEventsRemovedResult(new PeerEventArgs(new Peer(node)), out string subscriptionId);
+
+            jsonRpcResult.Response.Should().NotBeNull();
+            string serialized = _jsonSerializer.Serialize(jsonRpcResult.Response);
+            var expectedResult = string.Concat("{\"jsonrpc\":\"2.0\",\"method\":\"admin_subscription\",\"params\":{\"subscription\":\"", subscriptionId, "\",\"result\":{\"type\":\"Drop\",\"peer\":\"", TestItem.PublicKeyA.Hash.ToString(false), "\",\"local\":\"192.168.1.18\",\"remote\":\"192.168.1.18:8000\"}}}");
             expectedResult.Should().Be(serialized);
         }
     }
